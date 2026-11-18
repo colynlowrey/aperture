@@ -31,12 +31,27 @@ python process.py samples/yourphoto.jpg --blacks 0.02 --warmth 0.08 --grain 0.35
 
 | Knob | Default | What it does |
 |---|---|---|
-| `--blacks` | 0.02 | Depth of the shadow floor (true blacks) |
+| `--blacks` | 0.01 | Depth of the shadow floor (true blacks) |
+| `--lift` | 0.06 | Shadow recovery — keeps dark content alive |
 | `--contrast` | 1.06 | Punch around mid-gray |
+| `--local` | 0.25 | Local contrast — light sources snap against dark |
 | `--warmth` | 0.08 | Red up / blue down (warm hues) |
 | `--saturation` | 1.08 | Color richness |
-| `--grain` | 0.35 | Film grain (0 = off) |
+| `--grain` | 0.25 | Film grain, exposure-based visibility (0 = off) |
 | `--sharpen` | 0.0 | Unsharp mask — **off by default, on purpose** |
+
+## Presets
+
+Named recipes for different scene types — the ancestor of the agent's
+mood-to-settings decisions:
+
+| Preset | Personality |
+|---|---|
+| `default` | People & scenes — shadows stay alive |
+| `dusk` | Night scenes — deep blacks, light sources pop, scene still breathes |
+| `noir` | Light source as hero — maximal contrast |
+
+Usage: `python process.py samples\photo.jpg --preset dusk`
 
 Every stage is commented in `process.py` with a TEACHING NOTE explaining
 the *why* behind it.
