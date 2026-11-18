@@ -6,7 +6,10 @@
 
 ## The Four Pillars
 
-1. _Being decided — next step in the bootstrap._
+1. **Intent before the shot** — you describe the mood or features to highlight; the agent tunes the camera for that image.
+2. **Honest rendering by default** — true blacks, warm hues, natural texture; never artificially sharpened.
+3. **Teach, don't just do** — a toggleable mode that explains the craft as you shoot, so you grow as a photographer.
+4. **Deep, on-device editing** — an agentic editor with richer options (film grain and beyond), fully offline and private.
 
 ## Scope
 
@@ -25,3 +28,4 @@ _Estimate will be drafted together with the scope._
 ## Change Log
 
 - 2026-11-17 — Project bootstrapped. Logline confirmed: camera-first, mood-driven capture with on-device agent; defaults favor true blacks, warm hues, no artificial sharpening; agentic editor + toggleable teaching mode.
+- 2026-11-17 — Four pillars recorded (intent-first capture, honest defaults, teaching mode, deep on-device editing).
