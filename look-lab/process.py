@@ -36,7 +36,7 @@ DEFAULTS = {
     "contrast": 1.06,    # S-curve-ish contrast around mid gray
     "warmth": 0.08,      # red up / blue down shift (warm hues)
     "saturation": 1.08,  # color richness
-    "grain": 0.35,       # film grain amount (0 = off)
+    "grain": 0.25,       # film grain amount (0 = off)
     "sharpen": 0.0,      # unsharp mask amount (0 = OFF by default, on purpose)
 }
 
@@ -94,6 +94,22 @@ def saturate(img: np.ndarray, s: float) -> np.ndarray:
     return np.clip(luma + (img - luma) * s, 0.0, 1.0)
 
 
+def _box_blur(a: np.ndarray, r: int) -> np.ndarray:
+    """Separable box blur via cumulative sums (no scipy needed)."""
+    for axis in (0, 1):
+        k = 2 * r + 1
+        pads = [(0, 0), (0, 0)]
+        pads[axis] = (r, r)
+        p = np.pad(a, pads, mode="edge")
+        c = np.cumsum(p, axis=axis)
+        zero = np.zeros_like(np.take(c, [0], axis=axis))
+        c = np.concatenate([zero, c], axis=axis)  # c_prep[t] = sum p[0..t-1]
+        hi = np.take(c, list(range(2 * r + 1, 2 * r + 1 + a.shape[axis])), axis=axis)
+        lo = np.take(c, list(range(0, a.shape[axis])), axis=axis)
+        a = (hi - lo) / k
+    return a
+
+
 def add_grain(img: np.ndarray, amount: float, seed: int = 7) -> np.ndarray:
     """
     TEACHING NOTE -- film grain:
@@ -109,19 +125,26 @@ def add_grain(img: np.ndarray, amount: float, seed: int = 7) -> np.ndarray:
         return img
     h, w = img.shape[:2]
     rng = np.random.default_rng(seed)
-    noise = rng.normal(0.0, 1.0, (h, w)).astype(np.float32)
+    noise = rng.normal(0.0, 1.0, (h, w))
 
-    # Blur the noise so grains clump like film, via PIL's Gaussian filter.
-    noise_img = Image.fromarray(noise, mode="F")
-    noise_img = noise_img.filter(ImageFilter.GaussianBlur(radius=0.8))
-    clumps = np.asarray(noise_img, dtype=np.float64)
+    # Blur the noise so grains clump like film. Two small box-blur passes
+    # approximate a soft triangular kernel. Clump size scales with image
+    # resolution so grain reads as FILM texture, not pixel-level sensor
+    # noise. Normalize back to unit std so the strength slider means the
+    # same thing regardless of kernel size.
+    r = max(1, round(min(h, w) / 800))
+    clumps = _box_blur(noise, r)
+    clumps = _box_blur(clumps, r)
+    std = clumps.std()
+    if std > 0:
+        clumps = clumps / std
 
     # Visibility: peaks around midtones (4*x*(1-x) peaks at x=0.5), fades at
     # both extremes -- grain shouldn't dirtify true blacks or blow highlights.
     luma = img @ np.array([0.2126, 0.7152, 0.0722])
     vis = 4.0 * luma * (1.0 - luma)
 
-    strength = amount * 0.12  # scale slider to a sane sigma
+    strength = amount * 0.045  # scale slider to a sane sigma
     return np.clip(img + clumps[..., np.newaxis] * vis[..., np.newaxis] * strength, 0.0, 1.0)
 
 
