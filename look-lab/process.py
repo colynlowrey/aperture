@@ -51,6 +51,14 @@ PRESETS = {
         "blacks": 0.035, "lift": 0.0, "contrast": 1.10, "local": 0.40,
         "warmth": 0.08, "saturation": 1.08, "grain": 0.25, "sharpen": 0.0,
     },
+    # "dusk": between default and noir. Blacks are deep but not crushed,
+    # a touch of lift keeps dark areas alive, local contrast is present
+    # but polite. For night scenes with light sources that shouldn't
+    # completely swallow their surroundings.
+    "dusk": {
+        "blacks": 0.02, "lift": 0.03, "contrast": 1.08, "local": 0.30,
+        "warmth": 0.08, "saturation": 1.08, "grain": 0.25, "sharpen": 0.0,
+    },
 }
 
 
