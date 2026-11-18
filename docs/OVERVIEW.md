@@ -24,6 +24,7 @@
 - [ ] Onboarding — first-run explainer of the agent + defaults — [planned]
 
 ### Backend (on-device)
+- [ ] Look Lab prototype — laptop-side pipeline defining the default recipe (true blacks, warm hues, grain); informs default profile + editing engine — [in progress]
 - [ ] RAW capture pipeline (Camera2 API, DNG) with manual WB/exposure/focus control — [planned]
 - [ ] Local agent runtime — on-device model translating mood text → capture parameters — [planned]
 - [ ] Default look profile — tonemapping/processing tuned for true blacks, warm hues, minimal sharpening — [planned]
@@ -46,3 +47,4 @@ _Assumes part-time, agent-assisted work (evenings/weekends, you + agent)._
 - 2026-11-17 — Project bootstrapped. Logline confirmed: camera-first, mood-driven capture with on-device agent; defaults favor true blacks, warm hues, no artificial sharpening; agentic editor + toggleable teaching mode.
 - 2026-11-17 — Four pillars recorded (intent-first capture, honest defaults, teaching mode, deep on-device editing).
 - 2026-11-17 — Scope drafted (8 frontend, 6 backend features, all [planned]) and 7–12 week part-time estimate added. Name "Aperture" kept as placeholder; final name TBD, should evoke mood-driven capture with honest rendering.
+- 2026-11-17 — Look Lab started in `look-lab/`: laptop-side Python pipeline (blacks crush, contrast, warmth, saturation, film grain, sharpening off by default) to prototype the default recipe before any Android work. Personal sample photos git-ignored.
