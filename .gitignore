@@ -1,0 +1,5 @@
+# Personal photos and lab output stay local -- do not commit them.
+look-lab/samples/*
+!look-lab/samples/.gitkeep
+look-lab/out/*
+!look-lab/out/.gitkeep
