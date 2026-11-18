@@ -50,4 +50,8 @@ dependencies {
     implementation("androidx.camera:camera-camera2:1.3.4")
     implementation("androidx.camera:camera-lifecycle:1.3.4")
     implementation("androidx.camera:camera-view:1.3.4")
+
+    // EXIF reader -- capture JPEGs carry their rotation as metadata; we
+    // re-encode the bitmap, so we must apply it ourselves.
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
 }

@@ -16,6 +16,7 @@
 ### Frontend
 - [ ] Camera viewfinder — full-screen, minimal chrome, RAW-capable capture — [in progress]
 - [ ] Walking skeleton — Compose app: CameraX preview → shutter → save JPEG to Pictures/Aperture via MediaStore — [done]
+- [ ] Live look preview — preset chips (off/default/dusk/noir) filter the viewfinder in real time via GPU RenderEffect; capture runs the full recipe so the saved photo matches — [done]
 - [ ] Mood/intent input — describe the shot before capture (text field or quick preset moods) — [planned]
 - [ ] Live capture suggestions — agent's guidance surfaced in the viewfinder (exposure, WB, framing hints) — [planned]
 - [ ] Teaching mode toggle — on/off switch; when on, brief "why" cards appear as you shoot — [planned]
@@ -25,7 +26,8 @@
 - [ ] Onboarding — first-run explainer of the agent + defaults — [planned]
 
 ### Backend (on-device)
-- [ ] Look Lab prototype — laptop-side pipeline defining the default recipe (true blacks, warm hues, grain); informs default profile + editing engine — [in progress]
+- [ ] Look Lab prototype — laptop-side pipeline defining the default recipe (true blacks, warm hues, grain); informs default profile + editing engine — [done]
+- [ ] Recipe v1 → Kotlin port — `LookRecipe.kt` (color-matrix stages) + `LookLab.kt` (capture-side grain/local contrast) ported from `look-lab/process.py` — [done]
 - [ ] RAW capture pipeline (Camera2 API, DNG) with manual WB/exposure/focus control — [planned]
 - [ ] Local agent runtime — on-device model translating mood text → capture parameters — [planned]
 - [ ] Default look profile — tonemapping/processing tuned for true blacks, warm hues, minimal sharpening — [planned]
@@ -52,3 +54,4 @@ _Assumes part-time, agent-assisted work (evenings/weekends, you + agent)._
 - 2026-11-17 — Look tuning iterations with user's photos: grain made exposure-based and resolution-scaled; shadow lift added; local contrast added; named presets introduced. **Recipe v1**: `default` (people/scenes) and `dusk` (night scenes) approved by user; `noir` kept as the extreme reference. This is the DNA the app ships with and the vocabulary the agent will vary per mood.
 - 2026-11-17 — Android walking skeleton built and compiles (`android/`): JDK 17 + Android SDK (platform 34) + Gradle 8.9 installed on laptop; Kotlin + Compose + CameraX app (preview → shutter → MediaStore save) produces app-debug.apk (24.7 MB). Toolchain risk retired.
 - 2026-11-18 — Emulator dev environment: Virtual Machine Platform enabled (WHPX active), Pixel 6 / Android 14 AVD `aperture_avd` created, APK installed and **walking skeleton verified end-to-end on the emulator** — preview renders, shutter captures, JPEG lands in `Pictures/Aperture/` via MediaStore. Camera permission flow exercised.
+- 2026-11-18 — **Slice 2: live look preview verified on emulator.** Recipe v1 ported to Kotlin (`LookRecipe.kt`, `LookLab.kt`); viewfinder filtered in real time with `RenderEffect` + `ColorMatrixColorFilter` (API 31+); preset chips switch looks instantly; capture runs the full CPU recipe (adds grain + local contrast the preview can't show) and saves via MediaStore. Fixed EXIF-rotation bug (saved photos were sideways — JPEG pixels are landscape, we now bake the Orientation tag into the bitmap). Preview matrix documents its linearized-lift approximation vs. the exact capture formula.
