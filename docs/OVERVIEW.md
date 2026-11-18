@@ -13,19 +13,36 @@
 
 ## Scope
 
-_Scope planning begins after the pillars are locked._
-
 ### Frontend
-- _pending_
+- [ ] Camera viewfinder — full-screen, minimal chrome, RAW-capable capture — [planned]
+- [ ] Mood/intent input — describe the shot before capture (text field or quick preset moods) — [planned]
+- [ ] Live capture suggestions — agent's guidance surfaced in the viewfinder (exposure, WB, framing hints) — [planned]
+- [ ] Teaching mode toggle — on/off switch; when on, brief "why" cards appear as you shoot — [planned]
+- [ ] Gallery / filmstrip — recent shots, tap into editor — [planned]
+- [ ] Editor — deeper controls: tone curve, black point, hue warmth, film grain, sharpening amount — [planned]
+- [ ] Before/after compare — split or hold-to-compare view — [planned]
+- [ ] Onboarding — first-run explainer of the agent + defaults — [planned]
 
-### Backend
-- _pending_
+### Backend (on-device)
+- [ ] RAW capture pipeline (Camera2 API, DNG) with manual WB/exposure/focus control — [planned]
+- [ ] Local agent runtime — on-device model translating mood text → capture parameters — [planned]
+- [ ] Default look profile — tonemapping/processing tuned for true blacks, warm hues, minimal sharpening — [planned]
+- [ ] Editing engine — non-destructive edit stack applied to RAW, with grain synthesis — [planned]
+- [ ] Local storage — photos + edit recipes in app storage (no cloud) — [planned]
+- [ ] Teaching content engine — agent-generated explanations tied to actual settings used — [planned]
 
 ## Timeline Estimate
 
-_Estimate will be drafted together with the scope._
+_Assumes part-time, agent-assisted work (evenings/weekends, you + agent)._
+
+- Build: 4–6 weeks
+- QA & Testing: 1–2 weeks
+- Polish: 1–2 weeks
+- Iteration: 1–2 weeks
+- **Total: 7–12 weeks**
 
 ## Change Log
 
 - 2026-11-17 — Project bootstrapped. Logline confirmed: camera-first, mood-driven capture with on-device agent; defaults favor true blacks, warm hues, no artificial sharpening; agentic editor + toggleable teaching mode.
 - 2026-11-17 — Four pillars recorded (intent-first capture, honest defaults, teaching mode, deep on-device editing).
+- 2026-11-17 — Scope drafted (8 frontend, 6 backend features, all [planned]) and 7–12 week part-time estimate added. Name "Aperture" kept as placeholder; final name TBD, should evoke mood-driven capture with honest rendering.
