@@ -32,7 +32,8 @@ from PIL import Image, ImageFilter
 
 # Default recipe (Aperture's look). Tune these, then we freeze them.
 DEFAULTS = {
-    "blacks": 0.02,      # shadow floor crush: how deep the blacks go
+    "blacks": 0.01,      # shadow floor crush: how deep the blacks go
+    "lift": 0.06,        # shadow lift: recover detail in dark areas
     "contrast": 1.06,    # S-curve-ish contrast around mid gray
     "warmth": 0.08,      # red up / blue down shift (warm hues)
     "saturation": 1.08,  # color richness
@@ -58,6 +59,19 @@ def crush_blacks(img: np.ndarray, blacks: float) -> np.ndarray:
     if blacks <= 0:
         return img
     return np.clip((img - blacks) / (1.0 - blacks), 0.0, 1.0)
+
+
+def lift_shadows(img: np.ndarray, lift: float) -> np.ndarray:
+    """
+    TEACHING NOTE -- shadow lift (the counterweight to black crush):
+    Crush guarantees deep blacks, but a fixed crush can bury content that
+    lives in the shadows (people on a dark sidewalk!). Lift adds brightness
+    weighted by (1 - x)^2: strongest in the darkest pixels, ~zero at the
+    highlights. Crush then lift = "true blacks, but alive."
+    """
+    if lift <= 0:
+        return img
+    return np.clip(img + lift * (1.0 - img) ** 2, 0.0, 1.0)
 
 
 def contrast_curve(img: np.ndarray, c: float) -> np.ndarray:
@@ -139,10 +153,12 @@ def add_grain(img: np.ndarray, amount: float, seed: int = 7) -> np.ndarray:
     if std > 0:
         clumps = clumps / std
 
-    # Visibility: peaks around midtones (4*x*(1-x) peaks at x=0.5), fades at
-    # both extremes -- grain shouldn't dirtify true blacks or blow highlights.
+    # Visibility follows EXPOSURE, like real film: grain is densest where
+    # the negative got the least light (shadows) and fades as brightness
+    # rises. That keeps grain CONSISTENT WITH THE LIGHT SOURCES -- brightly
+    # lit fog around a lamp shows almost none, even though it looks gray.
     luma = img @ np.array([0.2126, 0.7152, 0.0722])
-    vis = 4.0 * luma * (1.0 - luma)
+    vis = (1.0 - luma) ** 2
 
     strength = amount * 0.045  # scale slider to a sane sigma
     return np.clip(img + clumps[..., np.newaxis] * vis[..., np.newaxis] * strength, 0.0, 1.0)
@@ -171,22 +187,14 @@ def process(path: Path, args) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     img = load(path)
-    steps = [
-        ("crush blacks", crush_blacks(img, args.blacks)),
-        ("contrast", None),
-        ("warmth", None),
-        ("saturation", None),
-        ("grain", None),
-        ("sharpen", None),
-    ]
-    # Apply in order, logging each stage.
     current = img
-    current = crush_blacks(current, args.blacks);      print(f"  [1/6] blacks      {args.blacks:.2f}")
-    current = contrast_curve(current, args.contrast);  print(f"  [2/6] contrast    {args.contrast:.2f}")
-    current = warm(current, args.warmth);              print(f"  [3/6] warmth      {args.warmth:.2f}")
-    current = saturate(current, args.saturation);      print(f"  [4/6] saturation  {args.saturation:.2f}")
-    current = add_grain(current, args.grain);          print(f"  [5/6] grain       {args.grain:.2f}")
-    current = unsharp(current, args.sharpen);          print(f"  [6/6] sharpen     {args.sharpen:.2f}")
+    current = crush_blacks(current, args.blacks);      print(f"  [1/7] blacks      {args.blacks:.2f}")
+    current = contrast_curve(current, args.contrast);  print(f"  [2/7] contrast    {args.contrast:.2f}")
+    current = lift_shadows(current, args.lift);        print(f"  [3/7] lift        {args.lift:.2f}")
+    current = warm(current, args.warmth);              print(f"  [4/7] warmth      {args.warmth:.2f}")
+    current = saturate(current, args.saturation);      print(f"  [5/7] saturation  {args.saturation:.2f}")
+    current = add_grain(current, args.grain);          print(f"  [6/7] grain       {args.grain:.2f}")
+    current = unsharp(current, args.sharpen);          print(f"  [7/7] sharpen     {args.sharpen:.2f}")
 
     # Side-by-side comparison: original | divider | processed.
     h = max(img.shape[0], current.shape[0])
