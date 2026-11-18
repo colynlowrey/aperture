@@ -14,7 +14,8 @@
 ## Scope
 
 ### Frontend
-- [ ] Camera viewfinder — full-screen, minimal chrome, RAW-capable capture — [planned]
+- [ ] Camera viewfinder — full-screen, minimal chrome, RAW-capable capture — [in progress]
+- [ ] Walking skeleton — Compose app: CameraX preview → shutter → save JPEG to Pictures/Aperture via MediaStore — [done]
 - [ ] Mood/intent input — describe the shot before capture (text field or quick preset moods) — [planned]
 - [ ] Live capture suggestions — agent's guidance surfaced in the viewfinder (exposure, WB, framing hints) — [planned]
 - [ ] Teaching mode toggle — on/off switch; when on, brief "why" cards appear as you shoot — [planned]
@@ -49,3 +50,4 @@ _Assumes part-time, agent-assisted work (evenings/weekends, you + agent)._
 - 2026-11-17 — Scope drafted (8 frontend, 6 backend features, all [planned]) and 7–12 week part-time estimate added. Name "Aperture" kept as placeholder; final name TBD, should evoke mood-driven capture with honest rendering.
 - 2026-11-17 — Look Lab started in `look-lab/`: laptop-side Python pipeline (blacks crush, contrast, warmth, saturation, film grain, sharpening off by default) to prototype the default recipe before any Android work. Personal sample photos git-ignored.
 - 2026-11-17 — Look tuning iterations with user's photos: grain made exposure-based and resolution-scaled; shadow lift added; local contrast added; named presets introduced. **Recipe v1**: `default` (people/scenes) and `dusk` (night scenes) approved by user; `noir` kept as the extreme reference. This is the DNA the app ships with and the vocabulary the agent will vary per mood.
+- 2026-11-17 — Android walking skeleton built and compiles (`android/`): JDK 17 + Android SDK (platform 34) + Gradle 8.9 installed on laptop; Kotlin + Compose + CameraX app (preview → shutter → MediaStore save) produces app-debug.apk (24.7 MB). Toolchain risk retired.
