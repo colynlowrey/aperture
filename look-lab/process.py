@@ -35,10 +35,22 @@ DEFAULTS = {
     "blacks": 0.01,      # shadow floor crush: how deep the blacks go
     "lift": 0.06,        # shadow lift: recover detail in dark areas
     "contrast": 1.06,    # S-curve-ish contrast around mid gray
+    "local": 0.25,       # local contrast: light sources snap against dark
     "warmth": 0.08,      # red up / blue down shift (warm hues)
     "saturation": 1.08,  # color richness
     "grain": 0.25,       # film grain amount (0 = off)
     "sharpen": 0.0,      # unsharp mask amount (0 = OFF by default, on purpose)
+}
+
+# Named recipes. Different scenes want different looks -- these presets are
+# the ancestor of the agent's "mood -> settings" decisions in the app.
+PRESETS = {
+    # "noir": the light source is the hero. Deep blacks, no shadow lift,
+    # extra local contrast so the glow gradient snaps against the dark.
+    "noir": {
+        "blacks": 0.035, "lift": 0.0, "contrast": 1.10, "local": 0.40,
+        "warmth": 0.08, "saturation": 1.08, "grain": 0.25, "sharpen": 0.0,
+    },
 }
 
 
@@ -82,6 +94,27 @@ def contrast_curve(img: np.ndarray, c: float) -> np.ndarray:
     give punch without clipping.
     """
     return np.clip((img - 0.5) * c + 0.5, 0.0, 1.0)
+
+
+def local_contrast(img: np.ndarray, amount: float) -> np.ndarray:
+    """
+    TEACHING NOTE -- local contrast ("clarity"):
+    Global curves reshape the histogram; they can't sharpen the *spatial*
+    transition from a light source to the black around it. Local contrast
+    works per-region: blur the image heavily, subtract that to isolate
+    mid-scale detail (the glow gradient itself), then add it back amplified.
+    The bright side of the transition gets brighter, the dark side darker --
+    the light source snaps against black. Large blur radius = tonal punch,
+    NOT the fine-edge halo sharpening this project deliberately avoids.
+    """
+    if amount <= 0:
+        return img
+    h, w = img.shape[:2]
+    radius = max(4.0, min(h, w) / 25)
+    pil = Image.fromarray((img * 255).round().clip(0, 255).astype(np.uint8))
+    blurred = np.asarray(pil.filter(ImageFilter.GaussianBlur(radius=radius)), dtype=np.float64) / 255.0
+    detail = img - blurred
+    return np.clip(img + amount * detail, 0.0, 1.0)
 
 
 def warm(img: np.ndarray, w: float) -> np.ndarray:
@@ -188,13 +221,14 @@ def process(path: Path, args) -> None:
 
     img = load(path)
     current = img
-    current = crush_blacks(current, args.blacks);      print(f"  [1/7] blacks      {args.blacks:.2f}")
-    current = contrast_curve(current, args.contrast);  print(f"  [2/7] contrast    {args.contrast:.2f}")
-    current = lift_shadows(current, args.lift);        print(f"  [3/7] lift        {args.lift:.2f}")
-    current = warm(current, args.warmth);              print(f"  [4/7] warmth      {args.warmth:.2f}")
-    current = saturate(current, args.saturation);      print(f"  [5/7] saturation  {args.saturation:.2f}")
-    current = add_grain(current, args.grain);          print(f"  [6/7] grain       {args.grain:.2f}")
-    current = unsharp(current, args.sharpen);          print(f"  [7/7] sharpen     {args.sharpen:.2f}")
+    current = crush_blacks(current, args.blacks);      print(f"  [1/8] blacks      {args.blacks:.2f}")
+    current = contrast_curve(current, args.contrast);  print(f"  [2/8] contrast    {args.contrast:.2f}")
+    current = lift_shadows(current, args.lift);        print(f"  [3/8] lift        {args.lift:.2f}")
+    current = local_contrast(current, args.local);     print(f"  [4/8] local       {args.local:.2f}")
+    current = warm(current, args.warmth);              print(f"  [5/8] warmth      {args.warmth:.2f}")
+    current = saturate(current, args.saturation);      print(f"  [6/8] saturation  {args.saturation:.2f}")
+    current = add_grain(current, args.grain);          print(f"  [7/8] grain       {args.grain:.2f}")
+    current = unsharp(current, args.sharpen);          print(f"  [8/8] sharpen     {args.sharpen:.2f}")
 
     # Side-by-side comparison: original | divider | processed.
     h = max(img.shape[0], current.shape[0])
@@ -224,18 +258,33 @@ def collect_inputs(target: Path) -> list[Path]:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Aperture Look Lab")
     parser.add_argument("input", help="photo file or directory (e.g. samples)")
-    for key, default in DEFAULTS.items():
-        parser.add_argument(f"--{key}", type=float, default=default)
+    parser.add_argument("--preset", choices=sorted(PRESETS), default=None,
+                        help="named recipe (e.g. noir); explicit flags still win")
+    for key in DEFAULTS:
+        parser.add_argument(f"--{key}", type=float, default=None)
     parser.add_argument("--out-dir", default="out")
     args = parser.parse_args()
+
+    # Resolve the recipe: DEFAULTS <- preset <- explicit flags.
+    recipe = dict(DEFAULTS)
+    if args.preset:
+        recipe.update(PRESETS[args.preset])
+    for key in DEFAULTS:
+        val = getattr(args, key)
+        if val is not None:
+            recipe[key] = val
+    for key, val in recipe.items():
+        setattr(args, key, val)
 
     target = Path(args.input)
     if not target.exists():
         print(f"Input not found: {target}")
         sys.exit(1)
 
-    print(f"Aperture Look Lab -- defaults: blacks={args.blacks}, contrast={args.contrast}, "
-          f"warmth={args.warmth}, saturation={args.saturation}, grain={args.grain}, sharpen={args.sharpen}")
+    label = f"{args.preset}" if args.preset else "defaults"
+    print(f"Aperture Look Lab [{label}] -- blacks={args.blacks}, lift={args.lift}, contrast={args.contrast}, "
+          f"local={args.local}, warmth={args.warmth}, saturation={args.saturation}, grain={args.grain}, "
+          f"sharpen={args.sharpen}")
     for path in collect_inputs(target):
         print(f"\n{path.name}")
         process(path, args)
