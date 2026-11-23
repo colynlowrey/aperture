@@ -36,12 +36,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,8 +68,12 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
 
-// TEACHING NOTE -- walking skeleton, slice 2: LIVE LOOK PREVIEW.
-// What's here beyond slice 1:
+// TEACHING NOTE -- walking skeleton, slice 3: MOOD INPUT.
+// What's here beyond slice 2:
+//   * MoodMapper: free text -> LookRecipe (the agent's contract; today a
+//     keyword scorer, tomorrow an on-device model behind the same API)
+//   * a text field above the chips; applied moods get their own chip
+// Slices 1-2 (for the record):
 //   * LookRecipe: Recipe v1 (default/dusk/noir) ported from the Look Lab
 //   * viewfinder filter: GPU ColorMatrix effect (API 31+) so the recipe
 //     is visible BEFORE you shoot -- tap chips to compare instantly
@@ -98,6 +108,30 @@ fun CameraSkeleton() {
 
     // Which recipe the viewfinder shows and the capture will use.
     var recipe by remember { mutableStateOf(LookRecipe.DEFAULT) }
+
+    // Slice 3: mood text -> recipe. moodRecipe is kept so the user's own
+    // chip can be tapped again later; the presets and the mood chip share
+    // one selection model (selected = current recipe's name).
+    var moodInput by remember { mutableStateOf("") }
+    var moodRecipe by remember { mutableStateOf<LookRecipe?>(null) }
+
+    val applyMood = {
+        val text = moodInput.trim()
+        if (text.isNotEmpty()) {
+            val result = MoodMapper.map(text)
+            moodRecipe = result.recipe
+            recipe = result.recipe
+            Toast.makeText(
+                context,
+                if (result.matched.isEmpty()) {
+                    "No mood words recognized -- kept the default look"
+                } else {
+                    "Mood applied: ${result.matched.joinToString(" + ")}"
+                },
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
 
     val imageCapture = remember {
         ImageCapture.Builder()
@@ -155,10 +189,27 @@ fun CameraSkeleton() {
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 48.dp),
+                    // Scrim: the controls sit over live video; a soft dark
+                    // panel keeps text and chips legible without hiding
+                    // the frame above.
+                    .background(
+                        Color.Black.copy(alpha = 0.45f),
+                        RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+                    )
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                PresetRow(selected = recipe, onSelect = { recipe = it })
+                MoodRow(
+                    input = moodInput,
+                    onInput = { moodInput = it },
+                    onApply = applyMood,
+                )
+                PresetRow(
+                    selected = recipe,
+                    mood = moodRecipe,
+                    onSelect = { recipe = it },
+                    modifier = Modifier.padding(top = 10.dp),
+                )
                 Box(
                     modifier = Modifier
                         .padding(top = 16.dp)
@@ -184,12 +235,49 @@ fun CameraSkeleton() {
     }
 }
 
-// The mood vocabulary in physical form. The agent replaces this picker
-// later -- but the presets are what it will be choosing FROM.
+// The mood box: describe the shot in your own words, hit Set (or the
+// keyboard's Done), and the viewfinder re-tunes. This input is the exact
+// slot the on-device agent will occupy later -- same field, smarter
+// occupant.
 @Composable
-fun PresetRow(selected: LookRecipe, onSelect: (LookRecipe) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        LookRecipe.ALL.forEach { preset ->
+fun MoodRow(input: String, onInput: (String) -> Unit, onApply: () -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        OutlinedTextField(
+            value = input,
+            onValueChange = onInput,
+            modifier = Modifier.width(250.dp),
+            singleLine = true,
+            placeholder = { Text("describe the mood\u2026") },
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { onApply() }),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.White.copy(alpha = 0.92f),
+                unfocusedContainerColor = Color.White.copy(alpha = 0.92f),
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+            ),
+        )
+        Button(onClick = onApply) { Text("Set") }
+    }
+}
+
+// The mood vocabulary in physical form. The agent replaces this picker
+// later -- but the presets are what it will be choosing FROM. When a mood
+// is applied, its chip appears first so the user can see and re-select
+// their own words.
+@Composable
+fun PresetRow(
+    selected: LookRecipe,
+    mood: LookRecipe?,
+    onSelect: (LookRecipe) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val chips: List<LookRecipe> = if (mood != null) listOf(mood) + LookRecipe.ALL else LookRecipe.ALL
+    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        chips.forEach { preset ->
             FilterChip(
                 selected = preset.name == selected.name,
                 onClick = { onSelect(preset) },
